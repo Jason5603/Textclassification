@@ -71,7 +71,6 @@ def mr(text_field, label_field, **kargs):
 
 # load data
 print("\nLoading data...")
-'''
 # load quora dataset
 tokenize = lambda x: x.split()
 text_field = Field(sequential = True, tokenize = tokenize, lower = True)
@@ -93,7 +92,7 @@ train_iter, dev_iter = Iterator.splits((train,valid), batch_sizes=(args.batch_si
 text_field = data.Field(lower=True)
 label_field = data.Field(sequential=False)
 train_iter, dev_iter = mr(text_field, label_field, device=args.device, repeat=False)
-
+'''
 # sst dataset
 # train_iter, dev_iter, test_iter = sst(text_field, label_field, device=-1, repeat=False)
 
