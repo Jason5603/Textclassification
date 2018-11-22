@@ -13,6 +13,8 @@ from torchtext.data import Field
 from torchtext.data import TabularDataset
 from torchtext.data import Iterator, BucketIterator
 
+import pandas as pd
+from sklearn.utils import shuffle
 
 parser = argparse.ArgumentParser(description='CNN text classificer')
 # learning
@@ -72,21 +74,42 @@ def mr(text_field, label_field, **kargs):
 # load data
 print("\nLoading data...")
 # load quora dataset
+PATH = 'quora_dataset/'
+df = pd.read_csv(f'{PATH}train.csv')
+df = shuffle(df)
+len_df = len(df)
+ratio = 0.8
+chunk = int(ratio * len_df)
+train_df = df[:chunk]
+valid_df = df[chunk:] 
+test_df = pd.read_csv(f'{PATH}test.csv')
+sample_submit_df = pd.read_csv(f'{PATH}sample_submission.csv')
+
 tokenize = lambda x: x.split()
 text_field = Field(sequential = True, tokenize = tokenize, lower = True)
 label_field = Field(sequential = False)
 
-tv_datafields = [('qid', None), ('question_text', text_field), ('target', label_field)]
-tst_datafields = [('qid', None), ('question_text', text_field)]
-quora_dataset = TabularDataset(path='quora_dataset/train.csv', format = 'csv', skip_header=True, fields = tv_datafields)
-quora_testset = TabularDataset(path='quora_dataset/test.csv', format = 'csv', skip_header=True, fields = tst_datafields)
-split_ratio = [0.8 , 0.2]
-train, valid = quora_dataset.split(split_ratio = split_ratio)
-text_field.build_vocab(train,valid)
-label_field.build_vocab(train,valid)
+train_set, valid_set =mydatasets.QuoraDataset.splits(text_field, label_field, train_df = train_df, val_df = valid_df)
+text_field.build_vocab(train_set, valid_set)
+label_field.build_vocab(train_set, valid_set)
+train_iter, dev_iter = data.Iterator.splits( (train_set, valid_set), batch_sizes=(args.batch_size, args.batch_size), device = args.device, repeat =False)
 
-train_iter, dev_iter = Iterator.splits((train,valid), batch_sizes=(args.batch_size,args.batch_size), device =args.device, repeat=False)
+'''
+tv_datafields = [('qid', None), ('text', text_field), ('label', label_field)]
+tst_datafields = [('qid', None), ('text', text_field)]
+#quora_dataset = TabularDataset(path='quora_dataset/train.csv', format = 'csv', skip_header=True, fields = tv_datafields)
+#quora_testset = TabularDataset(path='quora_dataset/test.csv', format = 'csv', skip_header=True, fields = tst_datafields)
+quora_dataset = mydatasets.QuoraDataset(path='quora_dataset/train.csv', format = 'csv', skip_header=True, fields = tv_datafields)
+quora_testset = mydatasets.QuoraDataset(path='quora_dataset/test.csv', format = 'csv', skip_header=True, fields = tst_datafields)
+split_ratio = [0.8 , 0.2]
+train_set, valid_set = quora_dataset.split(split_ratio = split_ratio)
+text_field.build_vocab(train_set,valid_set)
+label_field.build_vocab(train_set,valid_set)
+
+train_iter, dev_iter = Iterator.splits((train_set,valid_set), batch_sizes=(args.batch_size,args.batch_size), device =args.device, repeat=False)
 #train_iter, dev_iter = Iterator.splits((train,valid), batch_sizes=(args.batch_size, len(valid)), device =args.device, repeat=False)
+'''
+
 '''
 # mr dataset
 text_field = data.Field(lower=True)
